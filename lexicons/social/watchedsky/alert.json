@@ -1,0 +1,100 @@
+{
+  "lexicon": 1,
+  "id": "social.watchedsky.alert",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Record containing a US National Weather Service alert",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "id",
+          "sent",
+          "effective",
+          "status",
+          "messageType",
+          "severity",
+          "certainty",
+          "urgency",
+          "event",
+          "sender",
+          "senderName",
+          "headline",
+          "description"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "geometry": {
+            "type": "blob",
+            "description": "Optional GeoJSON indicating the boundaries of the alert",
+            "accept": ["application/json"],
+            "maxSize": 1048576
+          },
+          "status": {
+            "type": "string",
+            "knownValues": [
+              "social.watchedsky.status.actual",
+              "social.watchedsky.status.draft",
+              "social.watchedsky.status.exercise",
+              "social.watchedsky.status.system",
+              "social.watchedsky.status.test"
+            ]
+          },
+          "messageType": {
+            "type": "string",
+            "knownValues": [
+              "social.watchedsky.messagetype.alert",
+              "social.watchedsky.messagetype.cancel",
+              "social.watchedsky.messagetype.update"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "knownValues": [
+              "social.watchedsky.severity.extreme",
+              "social.watchedsky.severity.severe",
+              "social.watchedsky.severity.moderate",
+              "social.watchedsky.severity.minor"
+            ]
+          },
+          "urgency": {
+            "type": "string",
+            "knownValues": [
+              "social.watchedsky.urgency.immediate",
+              "social.watchedsky.urgency.expected",
+              "social.watchedsky.urgency.future",
+              "social.watchedsky.urgency.past"
+            ]
+          },
+          "certainty": {
+            "type": "string",
+            "knownValues": [
+              "social.watchedsky.certainty.observed",
+              "social.watchedsky.certainty.likely",
+              "social.watchedsky.certainty.possible",
+              "social.watchedsky.certainty.unlikely"
+            ]
+          },
+          "affectedZones": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "event": { "type": "string" },
+          "sender": { "type": "string" },
+          "senderName": { "type": "string" },
+          "headline": { "type": "string" },
+          "description": { "type": "string" },
+          "instruction": { "type": "string" },
+          "replacedBy": { "type": "string" },
+          "sent": { "type": "string", "format": "datetime" },
+          "effective": { "type": "string", "format": "datetime" },
+          "onset": { "type": "string", "format": "datetime" },
+          "expires": { "type": "string", "format": "datetime" },
+          "ends": { "type": "string", "format": "datetime" },
+          "replacedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}
