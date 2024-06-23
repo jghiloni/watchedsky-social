@@ -13,27 +13,27 @@ func init() {
 } //
 // RECORDTYPE: Alert
 type Alert struct {
-	LexiconTypeID string   `json:"$type,const=social.watchedsky.alert" cborgen:"$type,const=social.watchedsky.alert"`
-	AffectedZones []string `json:"affectedZones,omitempty" cborgen:"affectedZones,omitempty"`
-	Certainty     string   `json:"certainty" cborgen:"certainty"`
-	Description   string   `json:"description" cborgen:"description"`
-	Effective     string   `json:"effective" cborgen:"effective"`
-	Ends          *string  `json:"ends,omitempty" cborgen:"ends,omitempty"`
-	Event         string   `json:"event" cborgen:"event"`
-	Expires       *string  `json:"expires,omitempty" cborgen:"expires,omitempty"`
-	// geometry: Optional GeoJSON indicating the boundaries of the alert
-	Geometry    *util.LexBlob `json:"geometry,omitempty" cborgen:"geometry,omitempty"`
-	Headline    string        `json:"headline" cborgen:"headline"`
-	Id          string        `json:"id" cborgen:"id"`
-	Instruction *string       `json:"instruction,omitempty" cborgen:"instruction,omitempty"`
-	MessageType string        `json:"messageType" cborgen:"messageType"`
-	Onset       *string       `json:"onset,omitempty" cborgen:"onset,omitempty"`
-	ReplacedAt  *string       `json:"replacedAt,omitempty" cborgen:"replacedAt,omitempty"`
-	ReplacedBy  *string       `json:"replacedBy,omitempty" cborgen:"replacedBy,omitempty"`
-	Sender      string        `json:"sender" cborgen:"sender"`
-	SenderName  string        `json:"senderName" cborgen:"senderName"`
-	Sent        string        `json:"sent" cborgen:"sent"`
-	Severity    string        `json:"severity" cborgen:"severity"`
-	Status      string        `json:"status" cborgen:"status"`
-	Urgency     string        `json:"urgency" cborgen:"urgency"`
+	LexiconTypeID string        `json:"$type,const=social.watchedsky.alert" cborgen:"$type,const=social.watchedsky.alert"`
+	AffectedZones []string      `json:"affectedZones,omitempty" cborgen:"affectedZones,omitempty"`
+	AreaDesc      *string       `json:"areaDesc,omitempty" cborgen:"areaDesc,omitempty"`
+	Certainty     string        `json:"certainty" cborgen:"certainty"`
+	Description   string        `json:"description" cborgen:"description"`
+	Effective     string        `json:"effective" cborgen:"effective"`
+	Ends          *string       `json:"ends,omitempty" cborgen:"ends,omitempty"`
+	Event         string        `json:"event" cborgen:"event"`
+	Expires       *string       `json:"expires,omitempty" cborgen:"expires,omitempty"`
+	Geometry      *util.LexBlob `json:"geometry,omitempty" cborgen:"geometry,omitempty"`
+	Headline      string        `json:"headline" cborgen:"headline"`
+	Id            string        `json:"id" cborgen:"id"`
+	Instruction   *string       `json:"instruction,omitempty" cborgen:"instruction,omitempty"`
+	MessageType   string        `json:"messageType" cborgen:"messageType"`
+	Onset         *string       `json:"onset,omitempty" cborgen:"onset,omitempty"`
+	ReplacedAt    *string       `json:"replacedAt,omitempty" cborgen:"replacedAt,omitempty"`
+	ReplacedBy    *string       `json:"replacedBy,omitempty" cborgen:"replacedBy,omitempty"`
+	Sender        string        `json:"sender" cborgen:"sender"`
+	SenderName    string        `json:"senderName" cborgen:"senderName"`
+	Sent          string        `json:"sent" cborgen:"sent"`
+	Severity      string        `json:"severity" cborgen:"severity"`
+	Status        string        `json:"status" cborgen:"status"`
+	Urgency       string        `json:"urgency" cborgen:"urgency"`
 }

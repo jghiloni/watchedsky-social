@@ -26,9 +26,13 @@ func (t *Alert) MarshalCBOR(w io.Writer) error {
 	}
 
 	cw := cbg.NewCborWriter(w)
-	fieldCount := 22
+	fieldCount := 23
 
 	if t.AffectedZones == nil {
+		fieldCount--
+	}
+
+	if t.AreaDesc == nil {
 		fieldCount--
 	}
 
@@ -315,6 +319,38 @@ func (t *Alert) MarshalCBOR(w io.Writer) error {
 	}
 	if _, err := cw.WriteString(string(t.Urgency)); err != nil {
 		return err
+	}
+
+	// t.AreaDesc (string) (string)
+	if t.AreaDesc != nil {
+
+		if len("areaDesc") > 1000000 {
+			return xerrors.Errorf("Value in field \"areaDesc\" was too long")
+		}
+
+		if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len("areaDesc"))); err != nil {
+			return err
+		}
+		if _, err := cw.WriteString(string("areaDesc")); err != nil {
+			return err
+		}
+
+		if t.AreaDesc == nil {
+			if _, err := cw.Write(cbg.CborNull); err != nil {
+				return err
+			}
+		} else {
+			if len(*t.AreaDesc) > 1000000 {
+				return xerrors.Errorf("Value in field t.AreaDesc was too long")
+			}
+
+			if err := cw.WriteMajorTypeHeader(cbg.MajTextString, uint64(len(*t.AreaDesc))); err != nil {
+				return err
+			}
+			if _, err := cw.WriteString(string(*t.AreaDesc)); err != nil {
+				return err
+			}
+		}
 	}
 
 	// t.Geometry (util.LexBlob) (struct)
@@ -808,6 +844,27 @@ func (t *Alert) UnmarshalCBOR(r io.Reader) (err error) {
 				}
 
 				t.Urgency = string(sval)
+			}
+			// t.AreaDesc (string) (string)
+		case "areaDesc":
+
+			{
+				b, err := cr.ReadByte()
+				if err != nil {
+					return err
+				}
+				if b != cbg.CborNull[0] {
+					if err := cr.UnreadByte(); err != nil {
+						return err
+					}
+
+					sval, err := cbg.ReadStringWithMax(cr, 1000000)
+					if err != nil {
+						return err
+					}
+
+					t.AreaDesc = (*string)(&sval)
+				}
 			}
 			// t.Geometry (util.LexBlob) (struct)
 		case "geometry":

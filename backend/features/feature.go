@@ -16,10 +16,27 @@ const (
 	CollectionName string = "features"
 )
 
+type JSONObject map[string]any
+
+func (j JSONObject) StringValue(key string) string {
+	s, _ := j[key].(string)
+	return s
+}
+
+func (j JSONObject) IntValue(key string) int64 {
+	i, _ := j[key].(int64)
+	return i
+}
+
+func (j JSONObject) FloatValue(key string) float64 {
+	f, _ := j[key].(float64)
+	return f
+}
+
 type Feature struct {
 	ID         string           `json:"id" bson:"_id"`
 	Geometry   geojson.Geometry `json:"geometry"`
-	Properties map[string]any   `json:"properties"`
+	Properties JSONObject       `json:"properties"`
 }
 
 type Features []Feature
@@ -33,7 +50,7 @@ func (f Features) Less(i, j int) bool {
 	t1s, ok1 := f[i].Properties["sent"].(string)
 	t2s, ok2 := f[j].Properties["sent"].(string)
 
-	var t1, t2 time.Time = time.UnixMicro(0), time.UnixMicro(0)
+	var t1, t2 = time.UnixMicro(0), time.UnixMicro(0)
 	var err error
 	if ok1 {
 		t1, err = time.Parse(time.RFC3339, t1s)

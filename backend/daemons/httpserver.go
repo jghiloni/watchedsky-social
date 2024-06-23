@@ -32,16 +32,20 @@ func isProd() bool {
 	return os.Getenv("RUNTIME_ENV") == "PROD"
 }
 
+// HTTPServerDaemon runs the HTTP APIs for WatchedSky, including the front end,
+// REST APIs, and feed generators
 func HTTPServerDaemon(ctx context.Context) {
 	cfg := appcontext.AppConfig(ctx)
 	port := 10000
-	if cfg != nil {
-		if !cfg.HTTPServer.Enabled {
-			return
-		}
-
-		port = int(cfg.HTTPServer.Port)
+	if cfg == nil {
+		panic("configuration could not be found!")
 	}
+
+	if !cfg.HTTPServer.Enabled {
+		return
+	}
+
+	port = int(cfg.HTTPServer.Port)
 
 	app := fiber.New(fiber.Config{
 		AppName:               "WatchedSky",

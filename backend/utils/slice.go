@@ -1,5 +1,7 @@
 package utils
 
+import "fmt"
+
 func AnySlice[T any](src []T) []any {
 	if src == nil {
 		return nil
@@ -8,6 +10,24 @@ func AnySlice[T any](src []T) []any {
 	dest := make([]any, len(src))
 	for i := range src {
 		dest[i] = src[i]
+	}
+
+	return dest
+}
+
+func FromAnySlice[T any](src []any) []T {
+	if src == nil {
+		return nil
+	}
+
+	dest := make([]T, len(src))
+	for i := range src {
+		d, ok := src[i].(T)
+		if !ok {
+			panic(fmt.Errorf("%T is not T", d))
+		}
+
+		dest[i] = d
 	}
 
 	return dest

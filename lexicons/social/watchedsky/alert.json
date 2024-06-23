@@ -5,7 +5,7 @@
     "main": {
       "type": "record",
       "description": "Record containing a US National Weather Service alert",
-      "key": "tid",
+      "key": "any",
       "record": {
         "type": "object",
         "required": [
@@ -27,8 +27,7 @@
           "id": { "type": "string" },
           "geometry": {
             "type": "blob",
-            "description": "Optional GeoJSON indicating the boundaries of the alert",
-            "accept": ["application/json"],
+            "accept": ["application/geo+json", "application/json"],
             "maxSize": 1048576
           },
           "status": {
@@ -80,6 +79,7 @@
             "type": "array",
             "items": { "type": "string" }
           },
+          "areaDesc": { "type": "string" },
           "event": { "type": "string" },
           "sender": { "type": "string" },
           "senderName": { "type": "string" },

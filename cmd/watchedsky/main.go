@@ -22,4 +22,5 @@ func main() {
 	}()
 
 	go daemons.HTTPServerDaemon(ctx)
+	go daemons.NWSAlertPoller(ctx)
 }
