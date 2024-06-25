@@ -1,123 +1,121 @@
 package appcontext
 
-import (
-	"context"
-	"fmt"
-	"log/slog"
-	"os"
+// type appConfigContextKey struct{}
+// type dbClientContextKey struct{}
+// type bskyClientContextKey struct{}
+// type loggerContextKey struct{}
 
-	"github.com/bluesky-social/indigo/atproto/syntax"
-	feedconfig "github.com/jghiloni/go-bsky-feed-generator/config"
-	"github.com/jghiloni/watchedsky-social/backend/config"
-	"github.com/jghiloni/watchedsky-social/backend/logging"
-	amqp "github.com/rabbitmq/amqp091-go"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-)
+// var (
+// 	appConfig     appConfigContextKey
+// 	dbClientKey   dbClientContextKey
+// 	bskyClientKey bskyClientContextKey
+// 	loggerKey     loggerContextKey
+// )
 
-type contextKey string
+// func BuildApplicationContext() (context.Context, context.CancelFunc, error) {
+// 	cfg, err := config.LoadAppConfig()
+// 	if err != nil {
+// 		return nil, nil, err
+// 	}
 
-const (
-	appConfig   = contextKey("--ws-config--")
-	dbClientKey = contextKey("--ws-db-client--")
-	rmqConnKey  = contextKey("--ws-rmq-conn--")
-	loggerKey   = contextKey("--ws-log-key--")
-)
+// 	// ctx := context.WithValue(context.Background(), appConfig, cfg)
+// 	ctx, err := Registry.LoadClients(context.Background())
 
-func BuildApplicationContext() (context.Context, context.CancelFunc) {
-	cfg, err := config.LoadAppConfig()
-	if err != nil {
-		panic(err)
-	}
+// 	// if cfg.DBLoader.Enabled {
+// 	// 	dsn := fmt.Sprintf("mongodb://%s:%s@%s/%s?authSource=%s",
+// 	// 		cfg.MongoDB.Username, cfg.MongoDB.Password, cfg.MongoDB.Host,
+// 	// 		cfg.MongoDB.Name, cfg.MongoDB.AuthenticationDatabase,
+// 	// 	)
 
-	ctx := context.WithValue(context.Background(), appConfig, cfg)
+// 	// 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+// 	// 	opts := options.Client().ApplyURI(dsn).SetServerAPIOptions(serverAPI)
 
-	dsn := fmt.Sprintf("mongodb://%s:%s@%s/%s?authSource=%s",
-		cfg.MongoDB.Username, cfg.MongoDB.Password, cfg.MongoDB.Host,
-		cfg.MongoDB.Name, cfg.MongoDB.AuthenticationDatabase,
-	)
+// 	// 	client, err := mongo.Connect(ctx, opts)
+// 	// 	if err != nil {
+// 	// 		panic(err)
+// 	// 	}
 
-	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(dsn).SetServerAPIOptions(serverAPI)
+// 	// 	dbClient := client.Database(cfg.MongoDB.Name, options.Database().SetBSONOptions(&options.BSONOptions{
+// 	// 		UseJSONStructTags:       true,
+// 	// 		ErrorOnInlineDuplicates: false,
+// 	// 		NilMapAsEmpty:           true,
+// 	// 		NilSliceAsEmpty:         true,
+// 	// 		NilByteSliceAsEmpty:     true,
+// 	// 	}))
 
-	client, err := mongo.Connect(ctx, opts)
-	if err != nil {
-		panic(err)
-	}
+// 	// 	ctx = context.WithValue(ctx, dbClientKey, dbClient)
+// 	// }
 
-	dbClient := client.Database(cfg.MongoDB.Name, options.Database().SetBSONOptions(&options.BSONOptions{
-		UseJSONStructTags:       true,
-		ErrorOnInlineDuplicates: false,
-		NilMapAsEmpty:           true,
-		NilSliceAsEmpty:         true,
-		NilByteSliceAsEmpty:     true,
-	}))
+// 	// bskyClient, err := atproto.NewBlueskyClient(ctx, atproto.BlueskyClientConfig{
+// 	// 	PDSURL:   cfg.Bluesky.PDSURL,
+// 	// 	Username: cfg.Bluesky.Username,
+// 	// 	Password: cfg.Bluesky.AppPassword,
+// 	// })
+// 	// if err != nil {
+// 	// 	panic(err)
+// 	// }
+// 	// ctx = context.WithValue(ctx, bskyClientKey, bskyClient)
 
-	ctx = context.WithValue(ctx, dbClientKey, dbClient)
+// 	// ctx = context.WithValue(ctx, loggerKey, logging.GetLogger(os.Stdout, cfg.LogLevel))
 
-	conn, err := amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s", cfg.RabbitMQ.Username, cfg.RabbitMQ.Password, cfg.RabbitMQ.Host))
-	if err != nil {
-		panic(err)
-	}
+// 	// if cfg.HTTPServer.Enabled {
+// 	// 	ctx = feedconfig.WithConfig(ctx, feedconfig.FeedGeneratorConfig{
+// 	// 		ServiceDID: syntax.ATURI(cfg.Bluesky.FeedServiceDID),
+// 	// 	})
+// 	// }
 
-	ctx = context.WithValue(ctx, rmqConnKey, conn)
-	ctx = context.WithValue(ctx, loggerKey, logging.GetLogger(os.Stdout, cfg.LogLevel))
+// 	ctx, cancel := context.WithCancel(ctx)
+// 	return ctx, cancel, nil
+// }
 
-	ctx = feedconfig.WithConfig(ctx, feedconfig.FeedGeneratorConfig{
-		ServiceDID: syntax.ATURI(cfg.Bluesky.FeedServiceDID),
-	})
+// func AppConfig(ctx context.Context) *config.AppConfig {
+// 	if ctx == nil {
+// 		return nil
+// 	}
 
-	return context.WithCancel(ctx)
-}
+// 	appCfg, ok := ctx.Value(appConfig).(*config.AppConfig)
+// 	if !ok {
+// 		return nil
+// 	}
 
-func AppConfig(ctx context.Context) *config.AppConfig {
-	if ctx == nil {
-		return nil
-	}
+// 	return appCfg
+// }
 
-	appCfg, ok := ctx.Value(appConfig).(*config.AppConfig)
-	if !ok {
-		return nil
-	}
+// func DBClient(ctx context.Context) *mongo.Database {
+// 	if ctx == nil {
+// 		return nil
+// 	}
 
-	return appCfg
-}
+// 	dbClient, ok := ctx.Value(dbClientKey).(*mongo.Database)
+// 	if !ok {
+// 		return nil
+// 	}
 
-func DBClient(ctx context.Context) *mongo.Database {
-	if ctx == nil {
-		return nil
-	}
+// 	return dbClient
+// }
 
-	dbClient, ok := ctx.Value(dbClientKey).(*mongo.Database)
-	if !ok {
-		return nil
-	}
+// func BlueskyClient(ctx context.Context) *atproto.BlueskyClient {
+// 	if ctx == nil {
+// 		return nil
+// 	}
 
-	return dbClient
-}
+// 	bskyClient, ok := ctx.Value(bskyClientKey).(*atproto.BlueskyClient)
+// 	if !ok {
+// 		return nil
+// 	}
 
-func RabbitMQConnection(ctx context.Context) *amqp.Connection {
-	if ctx == nil {
-		return nil
-	}
+// 	return bskyClient
+// }
 
-	rmqConn, ok := ctx.Value(rmqConnKey).(*amqp.Connection)
-	if !ok {
-		return nil
-	}
+// func Logger(ctx context.Context) *slog.Logger {
+// 	if ctx == nil {
+// 		return nil
+// 	}
 
-	return rmqConn
-}
+// 	logger, ok := ctx.Value(loggerKey).(*slog.Logger)
+// 	if !ok {
+// 		return nil
+// 	}
 
-func Logger(ctx context.Context) *slog.Logger {
-	if ctx == nil {
-		return nil
-	}
-
-	logger, ok := ctx.Value(loggerKey).(*slog.Logger)
-	if !ok {
-		return nil
-	}
-
-	return logger
-}
+// 	return logger
+// }

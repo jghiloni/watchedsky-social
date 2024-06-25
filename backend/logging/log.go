@@ -1,48 +1,41 @@
 package logging
 
 import (
+	"context"
 	"io"
 	"log/slog"
+	"os"
+
+	"github.com/jghiloni/watchedsky-social/backend/appcontext"
+	"github.com/jghiloni/watchedsky-social/backend/config"
 )
 
-type LogLevel string
+type contextKey struct{}
 
-const (
-	Off   LogLevel = "off"
-	Error LogLevel = "error"
-	Warn  LogLevel = "warn"
-	Info  LogLevel = "info"
-	Debug LogLevel = "debug"
-)
+var loggerContextKey contextKey
 
-const slogOff slog.Level = slog.Level(-999)
-
-var levelMap map[LogLevel]slog.Level = map[LogLevel]slog.Level{
-	Off:   slogOff,
-	Error: slog.LevelError,
-	Warn:  slog.LevelWarn,
-	Info:  slog.LevelInfo,
-	Debug: slog.LevelDebug,
-}
-
-func (l LogLevel) SLogLevel() slog.Level {
-	level, ok := levelMap[l]
-	if !ok {
-		return slog.LevelInfo
-	}
-
-	return level
-}
-
-func GetLogger(out io.Writer, logLevel LogLevel) *slog.Logger {
-	level := logLevel.SLogLevel()
-	if level == slogOff {
+func loadClientToContext(ctx context.Context, cfg config.AppConfig) (context.Context, error) {
+	level := cfg.LogLevel.SLogLevel()
+	var out io.Writer = os.Stdout
+	if level == config.SlogOff {
 		out = io.Discard
 		level = slog.LevelError
 	}
 
-	return slog.New(slog.NewJSONHandler(out, &slog.HandlerOptions{
+	logger := slog.New(slog.NewJSONHandler(out, &slog.HandlerOptions{
 		Level:     level,
 		AddSource: level == slog.LevelDebug,
 	}))
+
+	ctx = context.WithValue(ctx, loggerContextKey, logger)
+	return ctx, nil
+}
+
+func init() {
+	appcontext.Registry.RegisterClient(loadClientToContext)
+}
+
+func GetLogger(ctx context.Context) *slog.Logger {
+	log, _ := ctx.Value(loggerContextKey).(*slog.Logger)
+	return log
 }

@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jghiloni/watchedsky-social/backend/appcontext"
-	"github.com/jghiloni/watchedsky-social/backend/atproto"
+	"github.com/jghiloni/watchedsky-social/backend/bsky"
+	"github.com/jghiloni/watchedsky-social/backend/config"
 	"github.com/jghiloni/watchedsky-social/backend/features"
 )
 
@@ -18,18 +18,14 @@ const apiURL = "https://api.weather.gov/alerts/active?status=actual&urgency=Imme
 // to a PDS, which will then be pulled via the firehose and stored in the DB and
 // published as skeets
 func NWSAlertPoller(ctx context.Context) {
-	cfg := appcontext.AppConfig(ctx)
-	if cfg == nil {
-		panic("configuration could not be found!")
-	}
+	cfg := config.GetConfig(ctx)
 
 	if !cfg.AlertPoller.Enabled {
 		return
 	}
 
-	bskyClient, err := atproto.NewBlueskyClient(ctx)
-	if err != nil {
-		log.Println(err)
+	bskyClient := bsky.GetClient(ctx)
+	if bskyClient != nil {
 		return
 	}
 

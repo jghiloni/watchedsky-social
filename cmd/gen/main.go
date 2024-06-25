@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/jghiloni/watchedsky-social/backend/atproto"
+	"github.com/jghiloni/watchedsky-social/backend/bsky"
 	cbg "github.com/whyrusleeping/cbor-gen"
 )
 
@@ -10,7 +10,7 @@ func main() {
 		MaxStringLength: 1_000_000,
 	}
 
-	if err := genCfg.WriteMapEncodersToFile("backend/atproto/cbor_gen.go", "atproto", atproto.Alert{}); err != nil {
+	if err := genCfg.WriteMapEncodersToFile("backend/bsky/cbor_gen.go", "bsky", bsky.Alert{}); err != nil {
 		panic(err)
 	}
 }

@@ -1,13 +1,16 @@
-package atproto
+package bsky
 
 import (
-	"encoding/json"
+	"context"
+	"errors"
 
 	"github.com/jghiloni/watchedsky-social/backend/features"
+	"github.com/jghiloni/watchedsky-social/backend/geojson"
+	"github.com/jghiloni/watchedsky-social/backend/mongo"
 	"github.com/jghiloni/watchedsky-social/backend/utils"
 )
 
-func (a Alert) ToFeature() features.Feature {
+func (a Alert) ToFeature(ctx context.Context) (features.Feature, error) {
 	f := features.Feature{
 		ID: a.Id,
 		Properties: map[string]any{
@@ -35,18 +38,43 @@ func (a Alert) ToFeature() features.Feature {
 		},
 	}
 
-	if a.Geometry != nil {
-		j, err := a.Geometry.MarshalJSON()
-		if err != nil {
-			panic(err)
-		}
+	var err error
+	f.Geometry, err = a.hydrateFeatureGeometry(ctx)
+	return f, err
+}
 
-		if err = json.Unmarshal(j, &f.Geometry); err != nil {
-			panic(err)
-		}
+func (a Alert) hydrateFeatureGeometry(ctx context.Context) (geojson.Geometry, error) {
+	geos := []geojson.Geometry{}
+
+	client := GetClient(ctx)
+	if client == nil {
+		return nil, errors.New("no bluesky client")
 	}
 
-	return f
+	alertGeo, err := client.GetAlertGeometry(ctx, a)
+	if err != nil {
+		return nil, err
+	}
+
+	geos = append(geos, alertGeo)
+
+	dbClient := mongo.GetClient(ctx)
+	if dbClient != nil {
+		azs, err := dbClient.GetFeaturesByID(ctx, a.AffectedZones...)
+		if err != nil {
+			return nil, err
+		}
+
+		geos = append(geos, utils.Map(azs.Features, func(f features.Feature) geojson.Geometry {
+			return f.Geometry
+		})...)
+	}
+
+	if len(geos) > 0 {
+		return geojson.GeometryCollection{Geometries: geos}, nil
+	}
+
+	return nil, nil
 }
 
 func FromFeature(f features.Feature) Alert {

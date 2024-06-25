@@ -24,7 +24,8 @@ import (
 	"github.com/gofiber/storage/mongodb/v2"
 	feedhttp "github.com/jghiloni/go-bsky-feed-generator/http"
 	"github.com/jghiloni/watchedsky-social/backend/api"
-	"github.com/jghiloni/watchedsky-social/backend/appcontext"
+	"github.com/jghiloni/watchedsky-social/backend/config"
+	"github.com/jghiloni/watchedsky-social/backend/mongo"
 	"github.com/jghiloni/watchedsky-social/frontend"
 )
 
@@ -35,11 +36,8 @@ func isProd() bool {
 // HTTPServerDaemon runs the HTTP APIs for WatchedSky, including the front end,
 // REST APIs, and feed generators
 func HTTPServerDaemon(ctx context.Context) {
-	cfg := appcontext.AppConfig(ctx)
+	cfg := config.GetConfig(ctx)
 	port := 10000
-	if cfg == nil {
-		panic("configuration could not be found!")
-	}
 
 	if !cfg.HTTPServer.Enabled {
 		return
@@ -92,22 +90,21 @@ func HTTPServerDaemon(ctx context.Context) {
 }
 
 func cacheMiddleware(ctx context.Context) fiber.Handler {
-	cfg := appcontext.AppConfig(ctx)
+	cfg := config.GetConfig(ctx)
 
 	host := ""
 	port := 0
 	username := ""
 	password := ""
-	if cfg != nil {
-		hp := strings.Split(cfg.MongoDB.Host, ":")
-		host = hp[0]
-		if len(hp) > 1 {
-			port, _ = strconv.Atoi(hp[1])
-		}
 
-		username = cfg.MongoDB.Username
-		password = cfg.MongoDB.Password
+	hp := strings.Split(cfg.MongoDB.Host, ":")
+	host = hp[0]
+	if len(hp) > 1 {
+		port, _ = strconv.Atoi(hp[1])
 	}
+
+	username = cfg.MongoDB.Username
+	password = cfg.MongoDB.Password
 
 	cacheStorage := mongodb.New(mongodb.Config{
 		Host:     host,
@@ -132,9 +129,8 @@ func healthcheckMiddleware(ctx context.Context) fiber.Handler {
 		LivenessEndpoint:  "/health",
 		ReadinessEndpoint: "/ready",
 		ReadinessProbe: func(c *fiber.Ctx) bool {
-			dbc := appcontext.DBClient(ctx)
-			rmc := appcontext.RabbitMQConnection(ctx)
-			return dbc != nil && rmc != nil
+			dbc := mongo.GetClient(ctx)
+			return dbc != nil
 		},
 	})
 }

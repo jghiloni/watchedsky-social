@@ -2,23 +2,18 @@ package api
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/jghiloni/watchedsky-social/backend/appcontext"
-	"github.com/jghiloni/watchedsky-social/backend/features"
-	"github.com/jghiloni/watchedsky-social/backend/utils"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/jghiloni/watchedsky-social/backend/mongo"
 )
 
 func ListFeatures(ctx context.Context) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		coll, err := getFeatureCollection(ctx, c)
-		if err != nil {
-			return err
+		mongoClient := mongo.GetClient(ctx)
+		if mongoClient == nil {
+			return errors.New("no mongo client configured")
 		}
 
 		pageSize := c.QueryInt("limit", 100)
@@ -31,36 +26,19 @@ func ListFeatures(ctx context.Context) fiber.Handler {
 		}
 
 		page := c.QueryInt("page", 0)
+		if page < 0 {
+			page = 0
+		}
 		featureType := c.Query("type")
 
-		query := bson.D{}
-		if featureType != "" {
-			query = bson.D{{"properties.@type", featureType}}
-		}
-
-		cursor, err := coll.Find(ctx, query, &options.FindOptions{
-			Limit: utils.Ptr(int64(pageSize)),
-			Skip:  utils.Ptr(int64(pageSize * page)),
+		response, err := mongoClient.ListFeaturesByType(ctx, featureType, mongo.PageOptions{
+			Page:     uint(page),
+			PageSize: uint(pageSize),
 		})
+
 		if err != nil {
 			return c.Status(http.StatusInternalServerError).JSON(map[string]string{"error": err.Error()})
 		}
-		defer cursor.Close(ctx)
-
-		feats := make([]features.Feature, 0, pageSize)
-		for cursor.Next(ctx) {
-			var f features.Feature
-			if err = cursor.Decode(&f); err != nil {
-				return fmt.Errorf("could not decode feature: %w", err)
-			}
-
-			feats = append(feats, f)
-		}
-
-		response := make(map[string]any)
-		response["page"] = page
-		response["pageSize"] = pageSize
-		response["features"] = feats
 
 		return c.JSON(response)
 	}
@@ -68,33 +46,18 @@ func ListFeatures(ctx context.Context) fiber.Handler {
 
 func GetFeature(ctx context.Context) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		coll, err := getFeatureCollection(ctx, c)
-		if err != nil {
-			return err
+		mongoClient := mongo.GetClient(ctx)
+		if mongoClient == nil {
+			return errors.New("no mongo client configured")
 		}
 
 		featureID := c.Params("id")
 
-		query := bson.D{{"_id", featureID}}
-		result := coll.FindOne(ctx, query)
-		if err := result.Err(); err != nil {
-			return c.Status(http.StatusInternalServerError).JSON(map[string]string{"error": err.Error()})
-		}
-
-		var f features.Feature
-		if err := result.Decode(&f); err != nil {
+		f, err := mongoClient.GetFeaturesByID(ctx, featureID)
+		if err != nil {
 			return c.Status(http.StatusInternalServerError).JSON(map[string]string{"error": err.Error()})
 		}
 
 		return c.JSON(f)
 	}
-}
-
-func getFeatureCollection(ctx context.Context, c *fiber.Ctx) (*mongo.Collection, error) {
-	db := appcontext.DBClient(ctx)
-	if db == nil {
-		return nil, c.SendStatus(http.StatusPreconditionFailed)
-	}
-
-	return db.Collection("features"), nil
 }
