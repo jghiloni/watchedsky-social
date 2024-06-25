@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/ipfs/go-cid"
 	"github.com/jghiloni/watchedsky-social/backend/config"
+	"github.com/jghiloni/watchedsky-social/backend/logging"
 	"github.com/jghiloni/watchedsky-social/backend/mongo"
 
 	"github.com/jghiloni/watchedsky-social/backend/bsky"
@@ -23,28 +23,32 @@ import (
 
 const firehoseURI = "https://bsky.network/xrpc/com.atproto.sync.subscribeRepos"
 
-func FirehoseConsumer(ctx context.Context) {
+func FirehoseNozzle(ctx context.Context) error {
 	cfg := config.GetConfig(ctx)
+	logger := logging.GetLogger(ctx)
 	if !cfg.FirehoseNozzle.Enabled {
-		return
+		return nil
 	}
+
+	logger.Info("Starting firehose nozzle")
 
 	bskyClient := bsky.GetClient(ctx)
 	if bskyClient == nil {
-		return
+		logger.Warn("bluesky config not set, exiting")
+		return nil
 	}
 
 	dbClient := mongo.GetClient(ctx)
 	if dbClient == nil {
-		return
+		logger.Warn("mongo config not set, exiting")
+		return nil
 	}
 
 	me := bskyClient.Me()
 
 	con, _, err := websocket.DefaultDialer.Dial(firehoseURI, http.Header{})
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 
 	callbacks := &events.RepoStreamCallbacks{
@@ -92,5 +96,5 @@ func FirehoseConsumer(ctx context.Context) {
 	}
 
 	scheduler := sequential.NewScheduler("watchedsky.social", callbacks.EventHandler)
-	events.HandleRepoStream(ctx, con, scheduler)
+	return events.HandleRepoStream(ctx, con, scheduler)
 }

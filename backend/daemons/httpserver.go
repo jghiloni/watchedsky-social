@@ -25,7 +25,6 @@ import (
 	feedhttp "github.com/jghiloni/go-bsky-feed-generator/http"
 	"github.com/jghiloni/watchedsky-social/backend/api"
 	"github.com/jghiloni/watchedsky-social/backend/config"
-	"github.com/jghiloni/watchedsky-social/backend/mongo"
 	"github.com/jghiloni/watchedsky-social/frontend"
 )
 
@@ -35,12 +34,12 @@ func isProd() bool {
 
 // HTTPServerDaemon runs the HTTP APIs for WatchedSky, including the front end,
 // REST APIs, and feed generators
-func HTTPServerDaemon(ctx context.Context) {
+func HTTPServerDaemon(ctx context.Context) error {
 	cfg := config.GetConfig(ctx)
 	port := 10000
 
 	if !cfg.HTTPServer.Enabled {
-		return
+		return nil
 	}
 
 	port = int(cfg.HTTPServer.Port)
@@ -68,7 +67,7 @@ func HTTPServerDaemon(ctx context.Context) {
 			Browse:     false,
 			Index:      "index.html",
 		}),
-		healthcheckMiddleware(ctx),
+		healthcheckMiddleware(),
 		helmet.New(),
 		requestid.New(), // must be before logger.New
 		logger.New(logger.Config{
@@ -86,7 +85,7 @@ func HTTPServerDaemon(ctx context.Context) {
 
 	app.Get("/xrpc/app.bsky.feed.getFeedSkeleton", adaptor.HTTPHandler(feedhttp.FeedHandler(ctx, nil)))
 
-	app.Listen(fmt.Sprintf(":%d", port))
+	return app.Listen(fmt.Sprintf(":%d", port))
 }
 
 func cacheMiddleware(ctx context.Context) fiber.Handler {
@@ -124,13 +123,12 @@ func cacheMiddleware(ctx context.Context) fiber.Handler {
 	})
 }
 
-func healthcheckMiddleware(ctx context.Context) fiber.Handler {
+func healthcheckMiddleware() fiber.Handler {
 	return healthcheck.New(healthcheck.Config{
 		LivenessEndpoint:  "/health",
 		ReadinessEndpoint: "/ready",
 		ReadinessProbe: func(c *fiber.Ctx) bool {
-			dbc := mongo.GetClient(ctx)
-			return dbc != nil
+			return AreDaemonsHealthy()
 		},
 	})
 }

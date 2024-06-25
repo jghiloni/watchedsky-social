@@ -34,7 +34,7 @@ func main() {
 		cancel()
 	}()
 
-	go daemons.HTTPServerDaemon(ctx)
-	go daemons.NWSAlertPoller(ctx)
-	go daemons.FirehoseConsumer(ctx)
+	go daemons.StartDaemon(ctx, "HTTPServer", daemons.HTTPServerDaemon)
+	go daemons.StartDaemon(ctx, "AlertPoller", daemons.AlertPoller)
+	go daemons.StartDaemon(ctx, "FirehoseNozzle", daemons.FirehoseNozzle)
 }
